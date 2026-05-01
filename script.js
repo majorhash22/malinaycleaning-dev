@@ -1,0 +1,475 @@
+/* ================================================ */
+/* MALINAY CLEANING SERVICES — script.js            */
+/* ================================================ */
+
+/* ===== WORKS CAROUSEL ===== */
+const beforeImages = document.querySelectorAll('.before-track img');
+const afterImages  = document.querySelectorAll('.after-track img');
+
+if (beforeImages.length && afterImages.length) {
+  const worksNext = document.getElementById('worksNext');
+  const worksPrev = document.getElementById('worksPrev');
+  const worksDotsContainer = document.getElementById('worksDots');
+  let worksIndex = 0;
+
+  // Build dots
+  beforeImages.forEach((_, i) => {
+    const dot = document.createElement('span');
+    if (i === 0) dot.classList.add('active');
+    dot.addEventListener('click', () => { worksIndex = i; updateWorks(); });
+    worksDotsContainer.appendChild(dot);
+  });
+
+  const worksDots = Array.from(worksDotsContainer.children);
+
+  function updateWorks() {
+    beforeImages.forEach(img => img.classList.remove('active'));
+    afterImages.forEach(img  => img.classList.remove('active'));
+    worksDots.forEach(dot    => dot.classList.remove('active'));
+    beforeImages[worksIndex].classList.add('active');
+    afterImages[worksIndex].classList.add('active');
+    worksDots[worksIndex].classList.add('active');
+  }
+
+  worksNext.addEventListener('click', () => {
+    worksIndex = (worksIndex + 1) % beforeImages.length;
+    updateWorks();
+  });
+
+  worksPrev.addEventListener('click', () => {
+    worksIndex = (worksIndex - 1 + beforeImages.length) % beforeImages.length;
+    updateWorks();
+  });
+
+  // Touch / swipe support
+  let touchStartX = 0;
+  const worksCarousel = document.querySelector('.works-carousel');
+  worksCarousel.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].clientX; }, { passive: true });
+  worksCarousel.addEventListener('touchend', e => {
+    const diff = touchStartX - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 40) {
+      worksIndex = diff > 0
+        ? (worksIndex + 1) % beforeImages.length
+        : (worksIndex - 1 + beforeImages.length) % beforeImages.length;
+      updateWorks();
+    }
+  }, { passive: true });
+
+  updateWorks();
+}
+
+/* ===== FADE IN ON SCROLL ===== */
+const faders = document.querySelectorAll('.fade-in');
+
+if (faders.length) {
+  const appearOnScroll = new IntersectionObserver((entries, observer) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+  faders.forEach(fader => appearOnScroll.observe(fader));
+}
+
+/* ===== SERVICES CAROUSEL ===== */
+const track = document.querySelector('.carousel-track');
+
+if (track) {
+  const items         = Array.from(track.children);
+  const nextButton    = document.getElementById('next');
+  const prevButton    = document.getElementById('prev');
+  const dotsContainer = document.getElementById('carouselDots');
+  let index = 0;
+  let autoTimer;
+
+  // Build one dot per card
+  items.forEach((_, i) => {
+    const dot = document.createElement('span');
+    if (i === 0) dot.classList.add('active');
+    dotsContainer.appendChild(dot);
+    dot.addEventListener('click', () => { index = i; scrollToCard(); });
+  });
+
+  const dots = Array.from(dotsContainer.children);
+
+  function scrollToCard() {
+    // Clamp index
+    index = Math.max(0, Math.min(index, items.length - 1));
+
+    // Scroll the track so the target card is at the left edge
+    const targetLeft = items[index].offsetLeft - track.offsetLeft;
+    track.scrollTo({ left: targetLeft, behavior: 'smooth' });
+
+    // Update dots
+    dots.forEach((d, i) => d.classList.toggle('active', i === index));
+  }
+
+  // Keep dots in sync when user swipes natively
+  track.addEventListener('scroll', () => {
+    const scrollLeft = track.scrollLeft;
+    let closest = 0;
+    let minDist = Infinity;
+    items.forEach((item, i) => {
+      const dist = Math.abs(item.offsetLeft - track.offsetLeft - scrollLeft);
+      if (dist < minDist) { minDist = dist; closest = i; }
+    });
+    if (closest !== index) {
+      index = closest;
+      dots.forEach((d, i) => d.classList.toggle('active', i === index));
+    }
+  }, { passive: true });
+
+  nextButton.addEventListener('click', () => {
+    index = (index + 1) % items.length;
+    scrollToCard();
+    resetAuto();
+  });
+
+  prevButton.addEventListener('click', () => {
+    index = (index - 1 + items.length) % items.length;
+    scrollToCard();
+    resetAuto();
+  });
+
+  function startAuto() {
+    autoTimer = setInterval(() => {
+      index = (index + 1) % items.length;
+      scrollToCard();
+    }, 5000);
+  }
+
+  function resetAuto() {
+    clearInterval(autoTimer);
+    startAuto();
+  }
+
+  startAuto();
+  scrollToCard();
+}
+
+/* ===== TESTIMONIALS CAROUSEL ===== */
+const tTrack = document.getElementById('testimonialsTrack');
+
+if (tTrack) {
+  const tCards         = Array.from(tTrack.children);
+  const tDotsContainer = document.getElementById('testimonialDots');
+  const tPrev          = document.getElementById('testimonialPrev');
+  const tNext          = document.getElementById('testimonialNext');
+  let tIndex = 0;
+
+  // Build one dot per card
+  tCards.forEach((_, i) => {
+    const dot = document.createElement('span');
+    if (i === 0) dot.classList.add('active');
+    dot.addEventListener('click', () => { tIndex = i; scrollToTestimonial(); });
+    tDotsContainer.appendChild(dot);
+  });
+
+  const tDots = Array.from(tDotsContainer.children);
+
+  function scrollToTestimonial() {
+    tIndex = Math.max(0, Math.min(tIndex, tCards.length - 1));
+    const targetLeft = tCards[tIndex].offsetLeft - tTrack.offsetLeft;
+    tTrack.scrollTo({ left: targetLeft, behavior: 'smooth' });
+    tDots.forEach((d, i) => d.classList.toggle('active', i === tIndex));
+  }
+
+  // Keep dots in sync when user swipes natively
+  tTrack.addEventListener('scroll', () => {
+    let closest = 0;
+    let minDist = Infinity;
+    tCards.forEach((card, i) => {
+      const dist = Math.abs(card.offsetLeft - tTrack.offsetLeft - tTrack.scrollLeft);
+      if (dist < minDist) { minDist = dist; closest = i; }
+    });
+    if (closest !== tIndex) {
+      tIndex = closest;
+      tDots.forEach((d, i) => d.classList.toggle('active', i === tIndex));
+    }
+  }, { passive: true });
+
+  tNext.addEventListener('click', () => {
+    tIndex = (tIndex + 1) % tCards.length;
+    scrollToTestimonial();
+  });
+
+  tPrev.addEventListener('click', () => {
+    tIndex = (tIndex - 1 + tCards.length) % tCards.length;
+    scrollToTestimonial();
+  });
+
+  scrollToTestimonial();
+}
+
+/* ===== EXPLORE SERVICES — card fade-in ===== */
+const serviceCards = document.querySelectorAll('.service-detail-card');
+
+if (serviceCards.length) {
+  const cardObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        cardObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+  serviceCards.forEach(card => cardObserver.observe(card));
+}
+
+/* ---- Blob sweep + Bubble rise on section titles ---- */
+(function () {
+
+  // ── Shared SVG filter for organic blob edges ──
+  (function injectFilter() {
+    if (document.getElementById('blob-filter')) return;
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('width', '0');
+    svg.setAttribute('height', '0');
+    svg.style.cssText = 'position:absolute;pointer-events:none;';
+    svg.innerHTML = `
+      <defs>
+        <filter id="blob-filter" x="-20%" y="-40%" width="140%" height="180%"
+                color-interpolation-filters="sRGB">
+          <feTurbulence type="turbulence" baseFrequency="0.012 0.020"
+                        numOctaves="3" seed="8" result="noise"/>
+          <feDisplacementMap in="SourceGraphic" in2="noise"
+                             scale="22" xChannelSelector="R" yChannelSelector="G"/>
+        </filter>
+      </defs>`;
+    document.body.appendChild(svg);
+  })();
+
+  // ── Blob definitions ──
+  const BLOB_DEFS = [
+    { wF: 2.8, hF: 0.90, vy:  0,  alpha: 0.20, del: '0.00s', dur: '1.6s' },
+    { wF: 1.6, hF: 0.70, vy: -6,  alpha: 0.15, del: '0.18s', dur: '1.5s' },
+    { wF: 3.4, hF: 1.05, vy:  4,  alpha: 0.13, del: '0.34s', dur: '1.7s' },
+    { wF: 2.0, hF: 0.80, vy: -4,  alpha: 0.17, del: '0.50s', dur: '1.55s'},
+    { wF: 2.6, hF: 0.95, vy:  2,  alpha: 0.12, del: '0.66s', dur: '1.65s'},
+  ];
+
+  // ── Bubble definitions (fraction-based, same as before) ──
+  const BUBBLE_DEFS = [
+    { sz: 28, xF: 0.00, x2F: 0.02, yPx: -100, del: '0.00s', dur: '1.8s' },
+    { sz: 16, xF: 0.06, x2F: 0.04, yPx: -120, del: '0.12s', dur: '1.5s' },
+    { sz: 22, xF: 0.13, x2F: 0.15, yPx: -105, del: '0.06s', dur: '1.7s' },
+    { sz: 12, xF: 0.20, x2F: 0.18, yPx: -130, del: '0.20s', dur: '1.4s' },
+    { sz: 30, xF: 0.28, x2F: 0.30, yPx:  -95, del: '0.03s', dur: '1.9s' },
+    { sz: 18, xF: 0.36, x2F: 0.34, yPx: -115, del: '0.15s', dur: '1.6s' },
+    { sz: 24, xF: 0.44, x2F: 0.46, yPx: -110, del: '0.09s', dur: '1.8s' },
+    { sz: 14, xF: 0.52, x2F: 0.50, yPx: -125, del: '0.25s', dur: '1.5s' },
+    { sz: 20, xF: 0.60, x2F: 0.62, yPx:  -90, del: '0.18s', dur: '1.7s' },
+    { sz: 10, xF: 0.68, x2F: 0.66, yPx: -118, del: '0.30s', dur: '1.3s' },
+    { sz: 26, xF: 0.76, x2F: 0.78, yPx: -100, del: '0.07s', dur: '1.9s' },
+    { sz: 15, xF: 0.85, x2F: 0.83, yPx: -112, del: '0.22s', dur: '1.5s' },
+  ];
+
+  function buildAnimations(banner) {
+    const titleEl = banner.querySelector('.section-title') || banner;
+    banner.style.position = 'relative';
+
+    // Two separate wraps — blobs on the title, bubbles below it
+    const blobWrap   = document.createElement('div');
+    blobWrap.className = 'blob-wrap';
+    banner.appendChild(blobWrap);
+
+    const bubbleWrap = document.createElement('div');
+    bubbleWrap.className = 'bubble-wrap';
+    banner.appendChild(bubbleWrap);
+
+    function animate() {
+      blobWrap.innerHTML   = '';
+      bubbleWrap.innerHTML = '';
+
+      const bRect   = banner.getBoundingClientRect();
+      const tRect   = titleEl.getBoundingClientRect();
+      const H       = tRect.height;
+      const offsetX = tRect.left - bRect.left;
+      const offsetY = tRect.top  - bRect.top;
+
+      // ── Blob wrap covers the title row ──
+      blobWrap.style.cssText = `
+        position:absolute;
+        left:${offsetX}px;
+        top:${offsetY}px;
+        width:${tRect.width}px;
+        height:${H}px;
+        overflow:hidden;
+        pointer-events:none;
+        z-index:10;
+        border-radius:4px;
+      `;
+
+      BLOB_DEFS.forEach(({ wF, hF, vy, alpha, del, dur }) => {
+        const blob = document.createElement('div');
+        blob.className = 'blob';
+        blob.style.cssText = `
+          width:${Math.round(wF * H)}px;
+          height:${Math.round(hF * H)}px;
+          --alpha:${alpha};
+          --vy:${vy}px;
+          --del:${del};
+          --dur:${dur};
+        `;
+        blobWrap.appendChild(blob);
+      });
+
+      // ── Bubble wrap anchored at bottom-left of title ──
+      const anchorX = offsetX;
+      const anchorY = offsetY + H;
+
+      const isMobile  = window.innerWidth < 600;
+      const zone      = isMobile ? Math.min(tRect.width, 260) : Math.min(tRect.width, 520);
+      const sizeScale = isMobile ? 0.65 : 1;
+
+      bubbleWrap.style.cssText = `
+        position:absolute;
+        left:${anchorX}px;
+        top:${anchorY}px;
+        width:0; height:0;
+        overflow:visible;
+        pointer-events:none;
+        z-index:10;
+      `;
+
+      BUBBLE_DEFS.forEach(({ sz, xF, x2F, yPx, del, dur }) => {
+        const size = Math.round(sz * sizeScale);
+        const xPx  = Math.round(xF  * zone);
+        const x2Px = Math.round(x2F * zone);
+        const b = document.createElement('div');
+        b.className = 'bubble';
+        b.style.cssText = `
+          width:${size}px;
+          height:${size}px;
+          left:${-size/2}px;
+          top:${-size/2}px;
+          --x:${xPx}px;
+          --x2:${x2Px}px;
+          --y:${yPx}px;
+          --del:${del};
+          --dur:${dur};
+        `;
+        bubbleWrap.appendChild(b);
+      });
+
+      setTimeout(() => { blobWrap.innerHTML = ''; },   2500);
+      setTimeout(() => { bubbleWrap.innerHTML = ''; }, 2200);
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          setTimeout(animate, 1100);
+          observer.unobserve(banner);
+        }
+      });
+    }, { threshold: 0.3 });
+
+    observer.observe(banner);
+  }
+
+  document.querySelectorAll('.section-banner').forEach(buildAnimations);
+})();
+
+/* ===== EMAIL VALIDATION & TYPO SUGGESTIONS ===== */
+(function () {
+
+  var DOMAIN_FIXES = {
+    'gamil.com':'gmail.com','gmai.com':'gmail.com','gmial.com':'gmail.com',
+    'gmail.co':'gmail.com','gmail.con':'gmail.com','gmail.cmo':'gmail.com',
+    'gmail.cm':'gmail.com','gmal.com':'gmail.com','gmil.com':'gmail.com',
+    'gnail.com':'gmail.com','gmail.comm':'gmail.com','gmail.ocm':'gmail.com',
+    'hotmal.com':'hotmail.com','hotmai.com':'hotmail.com','hotmial.com':'hotmail.com',
+    'hotmail.co':'hotmail.com','hotmail.con':'hotmail.com','hotmali.com':'hotmail.com',
+    'hotmaill.com':'hotmail.com','hotmall.com':'hotmail.com',
+    'yahooo.com':'yahoo.com','yaho.com':'yahoo.com','yahoo.co':'yahoo.com',
+    'yahoo.con':'yahoo.com','yhoo.com':'yahoo.com','yaho.ca':'yahoo.ca',
+    'outlok.com':'outlook.com','outllok.com':'outlook.com','outlook.co':'outlook.com',
+    'outlook.con':'outlook.com','outlookk.com':'outlook.com','outook.com':'outlook.com',
+    'iclod.com':'icloud.com','icloud.co':'icloud.com','icloud.con':'icloud.com',
+    'icould.com':'icloud.com','iclould.com':'icloud.com',
+    'live.co':'live.com','live.con':'live.com',
+    'protonmai.com':'protonmail.com','protonmal.com':'protonmail.com',
+    'protonmial.com':'protonmail.com'
+  };
+
+  function isValidFormat(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
+  }
+
+  function getSuggestion(email) {
+    var parts = email.trim().split('@');
+    if (parts.length !== 2) return null;
+    var domain = parts[1].toLowerCase();
+    return DOMAIN_FIXES[domain] ? parts[0] + '@' + DOMAIN_FIXES[domain] : null;
+  }
+
+  function getOrCreateFeedback(input) {
+    var existing = input.parentNode.querySelector('.email-feedback');
+    if (existing) return existing;
+    var fb = document.createElement('div');
+    fb.className = 'email-feedback';
+    fb.style.cssText = 'margin-top:5px;font-size:0.82em;padding:6px 10px;border-radius:6px;display:none;';
+    input.parentNode.appendChild(fb);
+    return fb;
+  }
+
+  function validateEmail(input) {
+    var val = input.value.trim();
+    var fb  = getOrCreateFeedback(input);
+
+    if (!val) {
+      fb.style.display = 'none';
+      input.style.borderColor = '';
+      return;
+    }
+
+    var suggestion = getSuggestion(val);
+
+    if (!isValidFormat(val)) {
+      fb.style.cssText = 'margin-top:5px;font-size:0.82em;padding:6px 10px;border-radius:6px;display:block;background:#fdecea;color:#c0392b;border:1px solid #f5c6cb;';
+      fb.innerHTML = '&#10007; Please enter a valid email address (e.g. name@gmail.com)';
+      input.style.borderColor = '#c0392b';
+    } else if (suggestion) {
+      fb.style.cssText = 'margin-top:5px;font-size:0.82em;padding:6px 10px;border-radius:6px;display:block;background:#fff8e1;color:#856404;border:1px solid #ffc107;cursor:pointer;';
+      fb.innerHTML = '&#9888; Did you mean <strong>' + suggestion + '</strong>? <span style="text-decoration:underline;font-weight:600;">Click to fix</span>';
+      input.style.borderColor = '#ffc107';
+      fb.onclick = function () {
+        input.value = suggestion;
+        validateEmail(input);
+      };
+    } else {
+      fb.style.cssText = 'margin-top:5px;font-size:0.82em;padding:6px 10px;border-radius:6px;display:block;background:#eafaf1;color:#1e7e34;border:1px solid #b7dfca;';
+      fb.innerHTML = '&#10003; Looks good!';
+      input.style.borderColor = '#28a745';
+    }
+  }
+
+  function attachToInput(input) {
+    input.addEventListener('blur',  function () { validateEmail(input); });
+    input.addEventListener('input', function () {
+      if (input.value.length > 5) validateEmail(input);
+    });
+  }
+
+  /* Attach to all email inputs on page load */
+  // document.querySelectorAll('input[type="email"]').forEach(attachToInput);
+
+  /* Also attach to any email inputs revealed dynamically */
+  var observer = new MutationObserver(function (mutations) {
+    mutations.forEach(function (m) {
+      m.addedNodes.forEach(function (node) {
+        if (node.nodeType !== 1) return;
+        var inputs = node.querySelectorAll ? node.querySelectorAll('input[type="email"]') : [];
+        inputs.forEach(attachToInput);
+        if (node.matches && node.matches('input[type="email"]')) attachToInput(node);
+      });
+    });
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
+
+})();

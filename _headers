@@ -1,0 +1,5 @@
+/*
+  Content-Security-Policy: script-src 'self' 'unsafe-inline' https://connect.facebook.net https://www.facebook.com https://staticxx.facebook.com https://fonts.googleapis.com; frame-src https://www.facebook.com https://staticxx.facebook.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://*.facebook.com https://*.fbcdn.net; connect-src 'self' https://www.facebook.com https://graph.facebook.com;
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: SAMEORIGIN
+  Referrer-Policy: strict-origin-when-cross-origin
